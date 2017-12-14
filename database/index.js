@@ -8,7 +8,7 @@ client.connect((err, result) => {
   console.log(err);
   console.log('Connected to cluster with %d host(s): %j', client.hosts.length, client.hosts.keys());
   
-  dataGeneration(client);
+  dataGeneration(client, 10000000);
 
 });
 
