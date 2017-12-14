@@ -1,6 +1,7 @@
 
 const uniqid = require('uniqid');
 const randomIntArray = require('random-int-array');
+const Promise = require('bluebird');
 
 // INSERT INTO tweets (id, content, isad, time, interactors)
 // VALUES (now(), 'first tweet', false, toTimestamp(now()), [1, 2, 3, 4, 5]);
@@ -15,33 +16,38 @@ const randomIntArray = require('random-int-array');
 //   interactors list<bigint>
 // )
 
-function dataGeneration(client) {
+function dataGeneration(client, howMany) {
+  console.log(' Starting ...');
+  let jobs = [];
 
-  const options = {count: 10, min: 0, max: 10000000};
-  const query = 'INSERT INTO tweets (id, content, isad, time, interactors) VALUES (?, ?, ?, ?, ?)';
+  function batch(count) {
+    const options = {count: 10, min: 0, max: 10000000};
+    let queries = [];
 
-  function Query(i) {
-    const params = [uniqid(), `tweet ${i}`, (i%3 === 0) ? true : false, new Date(), randomIntArray(options)];
-    client.execute(query, params, { prepare: true }, (err) => {
-      if (err) {console.log(err)};
-    });
+    if(count > howMany/50) {
+      return;
+    } else {
+
+      const query = 'INSERT INTO tweets (id, content, isad, time, interactors) VALUES (?, ?, ?, ?, ?)';
+      for(let i = 1; i < 50; i++) {
+        const params = [uniqid(), `tweet ${i}`, (i%3 === 0) ? true : false, new Date(), randomIntArray(options)];
+        queries.push({ query: query, params: params })
+      }
+
+      //jobs.push(new Promise((resolve, reject) => {
+        client.batch(queries, { prepare: true }, (err) => {
+          if (err) { console.log(err); };
+          console.log(count*50);
+          batch(count+1);
+        });
+      //}));
+
+    }
   }
 
-  function run1k(j) {
-    console.log(j);
-    for (let i = 0; i < 1000; i++) {   /kjfshdkfjh
-      Query(i);
-    }
-  };
-
-
-  const iterations = 2;
-    for (let i = 1; i < iterations; i++) {
-      setTimeout(() => { run1k(i) }, 100*i);
-      if (i === iterations-1) {
-        setTimeout(() => {console.log('complete')}, 200*i);
-      }
-    }
+  batch(0);
+  //Promise.all(jobs).then(() => { console.log('Complete!');}).catch((err) => {console.log(err);})
+  
 };
 
 module.exports = dataGeneration;
