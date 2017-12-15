@@ -16,38 +16,57 @@ const Promise = require('bluebird');
 //   interactors list<bigint>
 // )
 
-function dataGeneration(client, howMany) {
-  console.log(' Starting ...');
-  let jobs = [];
+function dataGeneration(client, howMany, elastic) {
+  console.log('Starting to insert', howMany);
 
-  function batch(count) {
-    const options = {count: 10, min: 0, max: 10000000};
-    let queries = [];
+  function batch(count, callback) {
+    const options = { count: 10, min: 0, max: 10000000 };
+    const queries = [];
+    const jobs = [];
 
-    if(count > howMany/50) {
+    if (count >= howMany / 50) {
+      callback();
       return;
     } else {
 
       const query = 'INSERT INTO tweets (id, content, isad, time, interactors) VALUES (?, ?, ?, ?, ?)';
-      for(let i = 1; i < 50; i++) {
-        const params = [uniqid(), `tweet ${i}`, (i%3 === 0) ? true : false, new Date(), randomIntArray(options)];
-        queries.push({ query: query, params: params })
+      let id;
+      let content;
+      let isAd;
+      let date;
+      let interactors;
+
+      // Creates queries for batch insert into cassandra and elastic
+      for (let i = 0; i < 50; i++) {
+        id = uniqid();
+        content = `tweet ${i}`;
+        isAd = (i % 3 === 0) ? true : false;
+        date = new Date();
+        interactors = randomIntArray(options);
+        const params = [id, content, isAd, date, interactors];
+        queries.push({ query, params });
       }
 
-      //jobs.push(new Promise((resolve, reject) => {
-        client.batch(queries, { prepare: true }, (err) => {
-          if (err) { console.log(err); };
-          console.log(count*50);
-          batch(count+1);
-        });
-      //}));
+      // Batch insert into cassandra
+      jobs.push(client.batch(queries, { prepare: true }));
 
+      // Batch insert into elastic
+      jobs.push(elastic.addBulkTweets(queries));
+
+      Promise.all(jobs)
+        .then((res) => {
+          console.log(' Inserted ', ++count * 50);
+          batch(count, callback);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     }
   }
 
-  batch(0);
-  //Promise.all(jobs).then(() => { console.log('Complete!');}).catch((err) => {console.log(err);})
-  
+  batch(0, () => {
+    console.log('Done...FUCK YEA NICK!!');
+  });
 };
 
 module.exports = dataGeneration;
