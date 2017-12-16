@@ -1,0 +1,18 @@
+config:
+  target: 'http://localhost:3000'
+  http:
+    pool: 1
+  phases:
+    - duration: 100
+      arrivalRate: 100
+      arrivalCount: 20000
+      name: "Warm up the application"
+  payload:
+      # path is relative to the location of the test script
+      path: "./csv/ids.csv"
+      fields:
+        - "id"
+scenarios:
+  - flow:
+    - get:
+        url: "/interactors/{{ id }}"

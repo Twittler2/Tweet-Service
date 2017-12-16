@@ -1,33 +1,64 @@
+// Add this to the VERY top of the first file loaded in your app
+const apm = require('elastic-apm-node').start({
+  // Set required app name (allowed characters: a-z, A-Z, 0-9, -, _, and space)
+  appName: 'tweetservice',
+  // Use if APM Server requires a token
+  secretToken: '',
+  // Set custom APM Server URL (default: http://localhost:8200)
+  serverUrl: ''
+});
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const Path = require('path');
-const client = require('../database/index.js');
+const { getInteractors, updateInteractors } = require('../database/index.js');
+// const axios = require('axios');
+// const elastic = require('../database/elasticsearch');
 
 const PORT = 3000;
 const app = express();
 
-const randomNumber = Math.floor(Math.random() * 1000000);
+let cache = {};
+let count = 0;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get('/', (req, res) => {
-  res.send("Hello Nick! This server's random number is: " + randomNumber + "\n");
-})
-
 app.post('/tweets/events', (req, res) => {
-  res.send();
+  updateInteractors(req.query.user, JSON.parse(req.query.tweets))
+    .then((result) => {
+      res.send(result);
+    })
+    .catch((error) => {
+      console.log('Ya done fucked up!');
+      res.status(500).send(error);
+    });
 });
 
-
 app.get('/interactors/:tweet_id', (req, res) => {
-  console.log('tweet_id', Path.parse(req.path).base);
   const tweetId = Path.parse(req.path).base;
-  const query = `SELECT interactors FROM tweets WHERE id='${tweetId}' ALLOW FILTERING;`;
-  client.execute(query, (err, result) => {
-    if (err) { res.status(500).send(); }
-    res.send(result.rows[0].interactors);
-  });
+
+  if (cache[tweetId]) {
+    res.send(cache[tweetId]);
+  } else {
+    getInteractors(tweetId)
+      .then((result) => {
+        cache[tweetId] = result.rows[0].interactors;
+        count++;
+        res.send(result.rows[0].interactors);
+      })
+      .catch((error) => {
+        console.log('Ya done fucked up!');
+        res.status(500).send(error);
+        throw error;
+      });
+  }
+
+  if (count > 1300) {
+    cache = {};
+    count = 0;
+  }
+
 });
 
 

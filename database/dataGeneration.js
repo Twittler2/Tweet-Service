@@ -1,4 +1,3 @@
-
 const uniqid = require('uniqid');
 const randomIntArray = require('random-int-array');
 const Promise = require('bluebird');
@@ -16,13 +15,12 @@ const Promise = require('bluebird');
 //   interactors list<bigint>
 // )
 
-function dataGeneration(client, howMany, elastic) {
+function dataGeneration(client, howMany) {
   console.log('Starting to insert', howMany);
 
-  function batch(count, callback) {
+  function batch(count, ID, callback) {
     const options = { count: 10, min: 0, max: 10000000 };
     const queries = [];
-    const jobs = [];
 
     if (count >= howMany / 50) {
       callback();
@@ -38,7 +36,7 @@ function dataGeneration(client, howMany, elastic) {
 
       // Creates queries for batch insert into cassandra and elastic
       for (let i = 0; i < 50; i++) {
-        id = uniqid();
+        id = ID++; // uniqid();
         content = `tweet ${i}`;
         isAd = (i % 3 === 0) ? true : false;
         date = new Date();
@@ -48,23 +46,23 @@ function dataGeneration(client, howMany, elastic) {
       }
 
       // Batch insert into cassandra
-      jobs.push(client.batch(queries, { prepare: true }));
+      client.batch(queries, { prepare: true }, (err) => {
+        console.log(' Inserted ', ++count * 50);
+        batch(count, ID, callback);
+      });
 
-      // Batch insert into elastic
-      jobs.push(elastic.addBulkTweets(queries));
-
-      Promise.all(jobs)
-        .then((res) => {
-          console.log(' Inserted ', ++count * 50);
-          batch(count, callback);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
+      // Promise.all(jobs)
+      //   .then((res) => {
+      //     console.log(' Inserted ', ++count * 50);
+      //     batch(count, ID, callback);
+      //   })
+      //   .catch((err) => {
+      //     console.log(err);
+      //   });
     }
   }
 
-  batch(0, () => {
+  batch(0, 0, () => {
     console.log('Done...FUCK YEA NICK!!');
   });
 };
