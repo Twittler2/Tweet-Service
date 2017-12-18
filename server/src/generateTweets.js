@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 function generateTweets(user, done) {
-  console.log(user);
+  console.log('User: ', user);
   done();
 }
 

@@ -6,46 +6,24 @@ require('elastic-apm-node').start({
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const Path = require('path');
-const { getInteractors, updateInteractors } = require('../database/index.js');
-// const { Kue, queue } = require('./queue/userKue.js');
+const { addUserToQueue, kue } = require('./queue/userJobs.js');
+const { sendInteractors } = require('./routes/GET-interactors.js');
+const { updateEvents } = require('./routes/POST-tweets-events.js');
 
 const PORT = 3000;
 const app = express();
 
-// Kue dashboard
-// app.use('/', Kue.app);
+app.use('/', kue.app);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// app.use(function(req,res,next){setTimeout(next,5)});
-
 app.post('/tweets/events', (req, res) => {
-
-  // save user in kue to process later
-
-  updateInteractors(req.query.user, JSON.parse(req.query.tweets))
-    .then((result) => {
-      res.send(result);
-    })
-    .catch((error) => {
-      console.log('Ya done fucked up!');
-      res.status(500).send(error);
-    });
+  addUserToQueue(req.query.user);
+  updateEvents(req, res);
 });
 
 app.get('/interactors/:tweet_id', (req, res) => {
-  const tweetId = Path.parse(req.path).base;
-
-  getInteractors(tweetId)
-    .then((result) => {
-      res.send(result.rows[0].interactors);
-    })
-    .catch((error) => {
-      console.log('Ya done fucked up!');
-      res.status(500).send(error);
-      throw error;
-    });
+  sendInteractors(req, res);
 });
 
 
