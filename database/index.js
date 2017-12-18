@@ -20,7 +20,7 @@ const updateInteractors = (user, tweets) => {
 
 const SEED = (err) => {
   if (!err) {
-    // dataGeneration(client, 10000000);
+    dataGeneration(client, 10000000);
   }
 };
 
@@ -31,7 +31,7 @@ client.connect((err) => {
   } else {
     console.log('Connected to cluster with %d host(s): %j', client.hosts.length, client.hosts.keys());
   }
-  SEED(err);
+  //SEED(err);
 });
 
 

@@ -1,10 +1,6 @@
-const uniqid = require('uniqid');
+// const uniqid = require('uniqid');
 const randomIntArray = require('random-int-array');
 const Promise = require('bluebird');
-
-// INSERT INTO tweets (id, content, isad, time, interactors)
-// VALUES (now(), 'first tweet', false, toTimestamp(now()), [1, 2, 3, 4, 5]);
-
 
 // TABLE SCHEMA
 // CREATE TABLE tweets (

@@ -1,10 +1,6 @@
-// Add this to the VERY top of the first file loaded in your app
-const apm = require('elastic-apm-node').start({
-  // Set required app name (allowed characters: a-z, A-Z, 0-9, -, _, and space)
+require('elastic-apm-node').start({
   appName: 'tweetservice',
-  // Use if APM Server requires a token
   secretToken: '',
-  // Set custom APM Server URL (default: http://localhost:8200)
   serverUrl: ''
 });
 
@@ -12,19 +8,22 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const Path = require('path');
 const { getInteractors, updateInteractors } = require('../database/index.js');
-// const axios = require('axios');
-// const elastic = require('../database/elasticsearch');
+// const { Kue, queue } = require('./queue/userKue.js');
 
 const PORT = 3000;
 const app = express();
 
-let cache = {};
-let count = 0;
-
+// Kue dashboard
+// app.use('/', Kue.app);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// app.use(function(req,res,next){setTimeout(next,5)});
+
 app.post('/tweets/events', (req, res) => {
+
+  // save user in kue to process later
+
   updateInteractors(req.query.user, JSON.parse(req.query.tweets))
     .then((result) => {
       res.send(result);
@@ -38,27 +37,15 @@ app.post('/tweets/events', (req, res) => {
 app.get('/interactors/:tweet_id', (req, res) => {
   const tweetId = Path.parse(req.path).base;
 
-  if (cache[tweetId]) {
-    res.send(cache[tweetId]);
-  } else {
-    getInteractors(tweetId)
-      .then((result) => {
-        cache[tweetId] = result.rows[0].interactors;
-        count++;
-        res.send(result.rows[0].interactors);
-      })
-      .catch((error) => {
-        console.log('Ya done fucked up!');
-        res.status(500).send(error);
-        throw error;
-      });
-  }
-
-  if (count > 1300) {
-    cache = {};
-    count = 0;
-  }
-
+  getInteractors(tweetId)
+    .then((result) => {
+      res.send(result.rows[0].interactors);
+    })
+    .catch((error) => {
+      console.log('Ya done fucked up!');
+      res.status(500).send(error);
+      throw error;
+    });
 });
 
 
