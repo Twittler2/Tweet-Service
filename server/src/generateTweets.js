@@ -16,15 +16,16 @@ function generateTweets(user, done) {
           };
 
           // send payload to feed service
+          console.log("FEED PAYLOAD: ", payload);
 
           done();
         }).catch((err) => {
           done();
-          throw err;
+          console.error(err);
         });
     }).catch((err) => {
       done();
-      throw err;
+      console.error(err);
     });
 }
 

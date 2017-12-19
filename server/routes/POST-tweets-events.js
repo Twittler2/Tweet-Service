@@ -1,16 +1,14 @@
 const { updateInteractors } = require('../../database/index.js');
 
-function updateEvents(req, res, done) {
-  updateInteractors(req.query.user, JSON.parse(req.query.tweets))
+function updateEvents(user, tweets, done) {
+  updateInteractors(user, JSON.parse(tweets))
     .then((result) => {
-      console.log('updateEvents S');
-      res.send(result);
-      //done();
+      console.log('Success FUCK YEA');
+      done();
     })
     .catch((error) => {
       console.log('Ya done fucked up!');
-      res.status(500).send(error);
-      //done();
+      done();
     });
 }
 

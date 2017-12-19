@@ -12,6 +12,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 
 app.get('/friends', (req, res) => {
+  console.log('called');
   res.send(randomIntArray(options));
 });
 
