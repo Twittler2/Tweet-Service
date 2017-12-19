@@ -2,14 +2,11 @@ const axios = require('axios');
 const { createNewTweet } = require('../../database/index.js');
 
 function generateTweets(user, done) {
-  console.log('User: ', user);
-
-  axios.get(`http://127.0.0.1:3000/friends`)
+  axios.get(`http://127.0.0.1:8080/friends`)
     .then((result) => {
       const friends = result.data;
       createNewTweet(user)
         .then((result) => {
-          console.log('tweet data: ', result);
           const id = result.id;
           const isAd = result.isAd;
 
@@ -22,12 +19,12 @@ function generateTweets(user, done) {
 
           done();
         }).catch((err) => {
-          console.log(err);
           done();
+          throw err;
         });
     }).catch((err) => {
-      console.log(err);
       done();
+      throw err;
     });
 }
 
