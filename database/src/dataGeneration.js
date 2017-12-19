@@ -1,6 +1,6 @@
-// const uniqid = require('uniqid');
+const uniqid = require('uniqid');
 const randomIntArray = require('random-int-array');
-const Promise = require('bluebird');
+// const Promise = require('bluebird');
 
 // TABLE SCHEMA
 // CREATE TABLE tweets (
@@ -23,7 +23,11 @@ function dataGeneration(client, howMany) {
       return;
     } else {
 
-      const query = 'INSERT INTO tweets (id, content, isad, time, interactors) VALUES (?, ?, ?, ?, ?)';
+      const query = `
+      INSERT INTO tweets (id, content, isad, time, interactors) 
+      VALUES (?, ?, ?, ?, ?)
+      `;
+      
       let id;
       let content;
       let isAd;
@@ -32,9 +36,9 @@ function dataGeneration(client, howMany) {
 
       // Creates queries for batch insert into cassandra and elastic
       for (let i = 0; i < 50; i++) {
-        id = ID++; // uniqid();
+        id = uniqid();
         content = `tweet ${i}`;
-        isAd = (i % 3 === 0) ? true : false;
+        isAd = (i % 3 === 0);
         date = new Date();
         interactors = randomIntArray(options);
         const params = [id, content, isAd, date, interactors];
@@ -47,14 +51,6 @@ function dataGeneration(client, howMany) {
         batch(count, ID, callback);
       });
 
-      // Promise.all(jobs)
-      //   .then((res) => {
-      //     console.log(' Inserted ', ++count * 50);
-      //     batch(count, ID, callback);
-      //   })
-      //   .catch((err) => {
-      //     console.log(err);
-      //   });
     }
   }
 
