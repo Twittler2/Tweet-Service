@@ -12,8 +12,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 
 app.get('/friends', (req, res) => {
-  console.log('called');
   res.send(randomIntArray(options));
+});
+
+app.post('/feed', (req, res) => {
+  console.log('Recieved: ', req.body);
+  res.send();
 });
 
 app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));

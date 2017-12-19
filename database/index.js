@@ -1,12 +1,13 @@
 const cassandra = require('cassandra-driver');
-const dataGeneration = require('./src/dataGeneration.js');
+// const dataGeneration = require('./src/dataGeneration.js');
+const { CASSANDRA_HOST, CASSANDRA_PORT } = require('../server/config.js');
 const uniqid = require('uniqid');
 const Promise = require('bluebird');
 const casual = require('casual');
 
 // Creaate a client to Cassandra database
 // const client = new cassandra.Client({ contactPoints: ['127.0.0.1'], keyspace: 'tweetkeyspace' });
-const client = new cassandra.Client({ contactPoints: ['192.168.99.100:9042'], keyspace: 'tweetkeyspace' });
+const client = new cassandra.Client({ contactPoints: [`${CASSANDRA_HOST}:${CASSANDRA_PORT}`], keyspace: 'tweetkeyspace' });
 
 const getInteractors = (id) => {
   const query = `SELECT interactors FROM tweets WHERE id='${id}'`;
@@ -54,7 +55,7 @@ client.connect((err) => {
   } else {
     console.log('Connected to cluster with %d host(s): %j', client.hosts.length, client.hosts.keys());
   }
-  // SEED(err);
+  SEED(err);
 });
 
 

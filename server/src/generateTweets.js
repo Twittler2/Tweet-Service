@@ -1,8 +1,9 @@
 const axios = require('axios');
+const { USER_SERVICE, FEED_SERVICE } = require('../config.js');
 const { createNewTweet } = require('../../database/index.js');
 
 function generateTweets(user, done) {
-  axios.get(`http://127.0.0.1:8080/friends`)
+  axios.get(USER_SERVICE)
     .then((result) => {
       const friends = result.data;
       createNewTweet(user)
@@ -15,10 +16,14 @@ function generateTweets(user, done) {
             users: friends
           };
 
-          // send payload to feed service
-          console.log("FEED PAYLOAD: ", payload);
+          axios.post(FEED_SERVICE, payload)
+            .then(() => {
+              done();
+            }).catch((err) => {
+              console.log(err);
+              done();
+            });
 
-          done();
         }).catch((err) => {
           done();
           console.error(err);

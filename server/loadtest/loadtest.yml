@@ -4,7 +4,7 @@ config:
     pool: 1
   phases:
     - duration: 10
-      arrivalCount: 100
+      arrivalCount: 10000
       name: "Warm up the application"
   payload:
       # path is relative to the location of the test script
@@ -15,3 +15,4 @@ scenarios:
   - flow:
     - get:
         url: "/interactors/{{ id }}"
+
