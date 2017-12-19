@@ -1,34 +1,38 @@
+require('elastic-apm-node').start({
+  appName: 'tweetservice',
+  secretToken: '',
+  serverUrl: ''
+});
+
 const express = require('express');
 const bodyParser = require('body-parser');
-const Path = require('path');
+const { addUserToQueue, kue } = require('./queue/userJobs.js');
+const { sendInteractors } = require('./routes/GET-interactors.js');
+const { updateEvents } = require('./routes/POST-tweets-events.js');
+const randomIntArray = require('random-int-array');
 
 const PORT = 3000;
 const app = express();
+const options = { count: 10, min: 0, max: 10000000 };
 
-const randomNumber = Math.floor(Math.random() * 1000000);
-
+app.use('/', kue.app);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get('/', (req, res) => {
-  res.send("Hello Nick! This server's random number is: " + randomNumber + "\n");
-})
-
 app.post('/tweets/events', (req, res) => {
-  res.send();
+  addUserToQueue(req.query.user);
+  updateEvents(req, res);
 });
-
 
 app.get('/interactors/:tweet_id', (req, res) => {
-  //console.log('tweet_id', Path.parse(req.path).base);
-  res.send();
+  sendInteractors(req, res);
 });
 
-
-app.post('/friends/:user_id', (req, res) => {
-  //console.log('user_id', Path.parse(req.path).base);
-  res.send();
+app.get('/friends', (req, res) => {
+  console.log('here');
+  res.send(randomIntArray(options));
 });
+
 
 app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
 
