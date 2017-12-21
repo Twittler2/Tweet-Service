@@ -16,6 +16,9 @@ app.use('/', Kue.app);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.get('/working', (req, res) => {
+  res.send('It is up');
+});
 
 app.post('/tweets/events', (req, res) => {
   createJob('Create Tweet', { user: req.query.user })
@@ -44,6 +47,6 @@ app.get('/interactors/:tweet_id', (req, res) => {
 });
 
 
-app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
+app.listen(PORT, () => console.log(`Listening on port ${PORT} @ ${new Date()}!`));
 
 module.exports = app;

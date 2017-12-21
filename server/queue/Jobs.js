@@ -31,7 +31,7 @@ function createJob(type, payload) {
 }
 
 
-jobs.process('job', 2, (job, done) => {
+jobs.process('job', 10, (job, done) => {
   if (job.data.type === 'Create Tweet') {
     generateTweets(job.data.payload.user, done);
   }
