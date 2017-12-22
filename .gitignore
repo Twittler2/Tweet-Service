@@ -34,5 +34,4 @@ client/dist/bundle.js
 .DS_Store
 
 # Holder for credentials
-config.js
 csv/
