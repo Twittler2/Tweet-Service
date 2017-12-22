@@ -43,7 +43,7 @@ const createNewTweet = (user) => {
 
 const SEED = (err) => {
   if (!err) {
-    // dataGeneration(client, 10000000);
+   // dataGeneration(client, 10000000);
   }
 };
 
