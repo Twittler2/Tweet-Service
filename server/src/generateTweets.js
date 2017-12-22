@@ -3,7 +3,7 @@ const { USER_SERVICE, FEED_SERVICE } = require('../config.js');
 const { createNewTweet } = require('../../database/index.js');
 
 function generateTweets(user, done) {
-  axios.get(USER_SERVICE)
+  axios.get(`${USER_SERVICE}?user_id=${user}`)
     .then((result) => {
       const friends = result.data;
       createNewTweet(user)
@@ -15,14 +15,15 @@ function generateTweets(user, done) {
             tweet: { id, isAd },
             users: friends
           };
-
-          axios.post(FEED_SERVICE, payload)
-            .then(() => {
-              done();
-            }).catch((err) => {
-              console.log(err);
-              done();
-            });
+          console.log('Payload to send: ', payload)
+          // axios.post(FEED_SERVICE, payload)
+          //   .then(() => {
+          //     done();
+          //   }).catch((err) => {
+          //     console.log(err);
+          //     done();
+          //   });
+          done();
 
         }).catch((err) => {
           done();
