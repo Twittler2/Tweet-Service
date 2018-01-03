@@ -3,18 +3,18 @@ config:
   http:
     pool: 1
   phases:
-    - duration: 10
-      arrivalCount: 1000
+    - duration: 1
+      arrivalCount: 15000
       name: "Warm up the application"
   payload:
       # path is relative to the location of the test script
       path: "../csv/tweets.csv"
       fields:
         - "tweetid"
-      path: "../csv/ids.csv"
+      path: "../csv/tweets.csv"
       fields:
-        - "user"
+        - "tweet"
 scenarios:
   - flow:
     - get:
-        url: "/interactors/z2uws8sgjbi6b9qb"
+        url: "/interactors/{{tweet}}"

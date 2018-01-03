@@ -1,6 +1,7 @@
 const cassandra = require('cassandra-driver');
 const dataGeneration = require('./src/dataGeneration.js');
 const { CASSANDRA_HOST, CASSANDRA_PORT } = require('../server/config.js');
+const { add, getCount, getStore } = require('../server/routes/interactor-store.js');
 const uniqid = require('uniqid');
 const Promise = require('bluebird');
 const casual = require('casual');
@@ -13,13 +14,33 @@ const getInteractors = (id) => {
   return client.execute(query);
 };
 
+
+// CHANGE TO A BATCH INSERT
 const updateInteractors = (user, tweets) => {
-  // Batch the updates?
-  const queries = [];
+  // add to store
   tweets.forEach((tweet) => {
-    queries.push({ query: `UPDATE tweets SET interactors = interactors + [${user}] WHERE id='${tweet}'` });
+    add(tweet, user);
   });
-  return client.batch(queries, { prepare: true });
+
+  if (getCount() === 50) {
+    const store = getStore();
+    const queries = [];
+    Object.keys(store).forEach((key) => {
+      queries.push({ query: `UPDATE tweets SET interactors = interactors + ${store[key]} WHERE id='${key}'` });
+    });
+    return client.batch(queries, { prepare: true });
+  } else {
+    return new Promise((resolve, reject) => {
+      console.log('here');
+      resolve();
+    })
+  }
+
+  // const queries = [];
+  // tweets.forEach((tweet) => {
+  //   queries.push({ query: `UPDATE tweets SET interactors = interactors + [${user}] WHERE id='${tweet}'` });
+  // });
+  // return client.batch(queries, { prepare: true });
 };
 
 const createNewTweet = (user) => {

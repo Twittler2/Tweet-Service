@@ -1,6 +1,6 @@
 const Kue = require('kue');
 const { REDIS_HOST, REDIS_PORT } = require('../config.js');
-const { generateTweets } = require('../src/generateTweets.js');
+const { generateTweets } = require('../routes/generate-tweets.js');
 const { updateEvents } = require('../routes/POST-tweets-events.js');
 const { sendInteractors } = require('../routes/GET-interactors.js');
 const Promise = require('bluebird');
