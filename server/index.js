@@ -1,39 +1,68 @@
-require('elastic-apm-node').start({
-  appName: 'tweetservice',
-  secretToken: '',
-  serverUrl: ''
-});
+// require('elastic-apm-node').start({
+//   appName: 'tweetservice',
+//   secretToken: '',
+//   serverUrl: ''
+// });
+const cluster = require('cluster');
 
-const express = require('express');
-const bodyParser = require('body-parser');
-const { addUserToQueue, kue } = require('./queue/userJobs.js');
-const { sendInteractors } = require('./routes/GET-interactors.js');
-const { updateEvents } = require('./routes/POST-tweets-events.js');
-const randomIntArray = require('random-int-array');
+if (cluster.isMaster) {
+  console.log(`Master ${process.pid} is running`);
 
-const PORT = 3000;
-const app = express();
-const options = { count: 10, min: 0, max: 10000000 };
+  // Fork workers.
+  for (let i = 0; i < 4; i++) {
+    cluster.fork();
+    console.log('number of cpus :', i);
+  }
 
-app.use('/', kue.app);
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+  cluster.on('exit', (worker, code, signal) => {
+    console.log(`worker ${worker.process.pid} died`);
+  });
+} else {
+  const express = require('express');
+  const bodyParser = require('body-parser');
+  const Path = require('path');
+  const { createJob, Kue } = require('./queue/Jobs.js');
 
-app.post('/tweets/events', (req, res) => {
-  addUserToQueue(req.query.user);
-  updateEvents(req, res);
-});
+  const PORT = 3000;
+  const app = express();
 
-app.get('/interactors/:tweet_id', (req, res) => {
-  sendInteractors(req, res);
-});
+  app.use('/', Kue.app);
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get('/friends', (req, res) => {
-  console.log('here');
-  res.send(randomIntArray(options));
-});
+  app.get('/working', (req, res) => {
+    res.send('It is up');
+  });
+
+  app.post('/tweets/events', (req, res) => {
+    createJob('Create Tweet', { user: req.body.user })
+      .then((result) => {
+        createJob('Update Events', { user: req.body.user, tweets: req.body.tweets })
+          .then(() => {
+            res.send();
+          }).catch((err) => {
+            res.status(500).send();
+            console.error(err);
+          });
+      }).catch((err) => {
+        res.status(500).send();
+        console.error(err);
+      });
+  });
+
+  app.get('/interactors/:tweet_id', (req, res) => {
+    createJob('Get Interactors', { tweetId: Path.parse(req.path).base })
+      .then((result) => {
+        res.send(result);
+      }).catch((err) => {
+        console.error(err);
+        res.status(500).send();
+      });
+  });
 
 
-app.listen(PORT, () => console.log(`Listening on port ${PORT}!`));
+  app.listen(PORT, () => console.log(`Listening on port ${PORT} @ ${new Date()}!`));
 
-module.exports = app;
+  module.exports = app;
+}
+

@@ -1,28 +1,49 @@
 const cassandra = require('cassandra-driver');
 const dataGeneration = require('./src/dataGeneration.js');
+const { CASSANDRA_HOST, CASSANDRA_PORT } = require('../server/config.js');
+const { add, getCount, getStore } = require('../server/routes/interactor-store.js');
 const uniqid = require('uniqid');
 const Promise = require('bluebird');
 const casual = require('casual');
 
 // Creaate a client to Cassandra database
-// const client = new cassandra.Client({ contactPoints: ['127.0.0.1'], keyspace: 'tweetkeyspace' });
-const client = new cassandra.Client({ contactPoints: ['192.168.99.100:9042'], keyspace: 'tweetkeyspace' });
+const client = new cassandra.Client({ contactPoints: [`${CASSANDRA_HOST}`], keyspace: 'tweetkeyspace' });
 
 const getInteractors = (id) => {
   const query = `SELECT interactors FROM tweets WHERE id='${id}'`;
   return client.execute(query);
 };
 
+
+// CHANGE TO A BATCH INSERT
 const updateInteractors = (user, tweets) => {
-  const queries = [];
+  // add to store
   tweets.forEach((tweet) => {
-    queries.push({ query: `UPDATE tweets SET interactors = interactors + [${user}] WHERE id='${tweet}'` });
+    add(tweet, user);
   });
-  return client.batch(queries, { prepare: true });
+
+  if (getCount() === 50) {
+    const store = getStore();
+    const queries = [];
+    Object.keys(store).forEach((key) => {
+      queries.push({ query: `UPDATE tweets SET interactors = interactors + ${store[key]} WHERE id='${key}'` });
+    });
+    return client.batch(queries, { prepare: true });
+  } else {
+    return new Promise((resolve, reject) => {
+      console.log('here');
+      resolve();
+    })
+  }
+
+  // const queries = [];
+  // tweets.forEach((tweet) => {
+  //   queries.push({ query: `UPDATE tweets SET interactors = interactors + [${user}] WHERE id='${tweet}'` });
+  // });
+  // return client.batch(queries, { prepare: true });
 };
 
 const createNewTweet = (user) => {
-  // id, content, isad, time, interactors
   const id = uniqid();
   const content = casual.sentence;
   const isAd = ((Math.floor(Math.random() * 100)) % 2 === 0);
@@ -43,7 +64,7 @@ const createNewTweet = (user) => {
 
 const SEED = (err) => {
   if (!err) {
-    // dataGeneration(client, 10000000);
+   // dataGeneration(client, 10000000);
   }
 };
 
@@ -54,20 +75,8 @@ client.connect((err) => {
   } else {
     console.log('Connected to cluster with %d host(s): %j', client.hosts.length, client.hosts.keys());
   }
-  // SEED(err);
+  SEED(err);
 });
 
 
 module.exports = { getInteractors, updateInteractors, createNewTweet };
-
-
-// IMPORTANT RUN CASANDRA IN CONTAINER AND CONNECT TO IT ON YOUR MACHINE
-// docker run --name cassandra304 -d -p 9042:9042 cassandra:3.0.4  //EXPOSE PORTS
-// IN ANOTHER TERMINAL    cqlsh 192.168.99.100   // IP is docker machine
-
-// create keyspace <name> with replication = {'class':'SimpleStrategy','replication_factor':3};
-
-// CREATE TABLE tweets (id text PRIMARY KEY, content text, isad boolean, time timestamp, interactors list<bigint>);
-
-// IN SERVER
-//   connect to 192.168.99.100:9042

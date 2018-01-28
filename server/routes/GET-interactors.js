@@ -1,16 +1,14 @@
 const { getInteractors } = require('../../database/index.js');
-const Path = require('path');
+const { get } = require('../routes/interactor-store.js');
 
-function sendInteractors(req, res) {
-  const tweetId = Path.parse(req.path).base;
+function sendInteractors(tweetId, done) {
   getInteractors(tweetId)
     .then((result) => {
-      res.send(result.rows[0].interactors);
+      done(null, result.rows[0].interactors + get(tweetId));
     })
     .catch((error) => {
       console.log('Ya done fucked up!');
-      res.status(500).send(error);
-      throw error;
+      done(error);
     });
 }
 
